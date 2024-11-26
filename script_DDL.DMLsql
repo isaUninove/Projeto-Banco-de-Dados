@@ -81,6 +81,25 @@ VALUES
 (GETDATE(), 120.50, 'Pago'),
 (GETDATE(), 71.89, 'Pendente');
 
+
+-- Tabela estoque
+
+CREATE TABLE Estoque(
+    idEstoque INT IDENTITY(1,1) PRIMARY KEY NOT NULL,  -- idEstoque como chave primária com incremento automático.
+    idProduto INT NOT NULL,  -- Chave estrangeira para a tabela Produto.
+    DataAtualizacao DATETIME DEFAULT GETDATE(),  -- Data de atualização com valor padrão de data atual.
+    Quantidade INT NOT NULL,  -- Quantidade disponível no estoque.
+    FOREIGN KEY (idProduto) REFERENCES Produto(idProduto)  -- Relaciona com a tabela Produto.
+);
+
+
+-- Inserindo dados de exemplo na tabela Estoque
+INSERT INTO Estoque (idProduto, Quantidade)
+VALUES 
+(1, 50),  -- Produto 1 com 50 unidades no estoque
+(2, 30),  -- Produto 2 com 30 unidades no estoque
+(3, 100); -- Produto 3 com 100 unidades no estoque
+
 -- criação da tabela PedidoProduto
 
 CREATE TABLE PedidoProduto (
