@@ -1,231 +1,155 @@
--- deletar banco 
-DROP DATABASE EcommerceFacul;
 
--- Criamos o banco de dados se ele não existir
-CREATE DATABASE IF NOT EXISTS EcommerceFacul;
+CREATE DATABASE PetShopEcommerce;
 
--- Utilizamos o banco de dados criado
-USE EcommerceFacul;
 
--- 1  A tabela DadosCadastrais armazena informações de contato e identificação dos clientes
-CREATE TABLE DadosCadastrais(
-    idDadosCadastrais INT PRIMARY KEY AUTO_INCREMENT NOT NULL,  -- idDadosCadastrais é a chave primária.
-    Email VARCHAR(100) NOT NULL,  -- Email do cliente.
-    DataCadastro DATE NOT NULL,  -- Data em que o cliente se cadastrou.
-    CPF VARCHAR(11) UNIQUE NOT NULL,  -- CPF do cliente, 11 dígitos, precisa ser único.
-    Telefone VARCHAR(20) NOT NULL,  -- Telefone do cliente.
-    CNPJ CHAR(14) UNIQUE NOT NULL,  -- CNPJ é único e tem 14 dígitos (agora CHAR(14)).
-    Endereço VARCHAR(100) NOT NULL,  -- Endereço completo do cliente.
-    CEP VARCHAR(8) NOT NULL,  -- CEP (código postal) de 8 dígitos.
-    RUA VARCHAR(50) NOT NULL,  -- Nome da rua com até 50 caracteres.
-    ESTADO VARCHAR(50),  -- Estado onde o cliente reside.
-    idFornecedor INT  -- Chave estrangeira opcional para referenciar fornecedores.
+USE PetShopEcommerce;
+-- criação da tabela cliente
+CREATE TABLE Cliente (
+    idCliente INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
+    Telefone VARCHAR(17) NOT NULL,
+    Email VARCHAR(80) NOT NULL,
+    CPF VARCHAR(14) NOT NULL UNIQUE,
+    DataCadastro DATETIME DEFAULT GETDATE() NOT NULL
 );
 
--- 2  A tabela Categoria classifica os produtos.
-CREATE TABLE Categoria(
-    idCategoria INT PRIMARY KEY AUTO_INCREMENT NOT NULL,  -- idCategoria é a chave primária.
-    NomeCategoria VARCHAR(50) NOT NULL  -- Nome da categoria de produto, até 50 caracteres.
+-- Inserindo valores na tabela Cliente
+INSERT INTO Cliente (Nome, Telefone, Email, CPF)
+VALUES 
+('Ana Clara', '(11) 98765-4321', 'ana.clara@gmail.com', '123.456.789-00'),
+('Bruno Silva', '(21) 99876-5432', 'bruno.silva@hotmail.com', '234.567.890-11');
+
+-- criação da tabela fornecedor
+CREATE TABLE Fornecedor (
+    idFornecedor INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    NomeFornecedor VARCHAR(60) NOT NULL,
+    CNPJ VARCHAR(14) UNIQUE NOT NULL,
+    Telefone VARCHAR(20) NOT NULL,
+    Email VARCHAR(80) NOT NULL,
+    Endereco VARCHAR(100) NOT NULL
 );
 
--- 3 A tabela Fornecedor guarda as informações dos fornecedores de produtos.
-CREATE TABLE Fornecedor(
-    idFornecedor INT PRIMARY KEY AUTO_INCREMENT NOT NULL,  -- idFornecedor é a chave primária.
-    Nomefornecedor VARCHAR(60) NOT NULL,  -- Nome do fornecedor, até 60 caracteres.
-    CNPJ CHAR(14) UNIQUE NOT NULL,  -- CNPJ único do fornecedor, 14 dígitos.
-    Telefone VARCHAR(20) NOT NULL  -- Telefone do fornecedor.
+-- Inserindo valores na tabela Fornecedor
+INSERT INTO Fornecedor (NomeFornecedor, CNPJ, Telefone, Email, Endereco)
+VALUES 
+('PetFood Ltda', '12345678000190', '(11) 99888-7777', 'contato@petfood.com.br', 'Rua das Flores, 123'),
+('VetCare Supplies', '98765432000121', '(21) 99777-8888', 'suporte@vetcare.com', 'Av. dos Animais, 456');
+
+-- criação da tabela fornecedor
+CREATE TABLE Categoria (
+    idCategoria INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    NomeCategoria VARCHAR(50) NOT NULL
 );
 
--- A tabela Produto armazena detalhes sobre cada produto.
-CREATE TABLE Produto(
-    idProduto INT PRIMARY KEY AUTO_INCREMENT NOT NULL,  -- idProduto é a chave primária.
-    NomeProduto VARCHAR(50) NOT NULL,  -- Nome do produto.
-    Preço DECIMAL(10,2) NOT NULL,  -- Preço do produto com 2 casas decimais.
-    idCategoria INT,  -- Chave estrangeira para a categoria do produto.
-    idFornecedor INT,  -- Chave estrangeira para o fornecedor do produto.
-    FOREIGN KEY (idCategoria) REFERENCES Categoria(idCategoria),  -- Relaciona com a tabela Categoria.
-    FOREIGN KEY (idFornecedor) REFERENCES Fornecedor(idFornecedor)  -- Relaciona com a tabela Fornecedor.
+-- Inserindo valores na tabela Categoria
+INSERT INTO Categoria (NomeCategoria)
+VALUES 
+('Ração'),
+('Brinquedos'),
+('Acessórios');
+
+-- criação da tabela Produto
+CREATE TABLE Produto (
+    idProduto INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    NomeProduto VARCHAR(50) NOT NULL,
+    Preço DECIMAL(10,2) NOT NULL,
+    idCategoria INT NOT NULL,
+    idFornecedor INT NOT NULL,
+    FOREIGN KEY (idCategoria) REFERENCES Categoria(idCategoria),
+    FOREIGN KEY (idFornecedor) REFERENCES Fornecedor(idFornecedor)
 );
 
--- tabela log 
-CREATE TABLE Log(
-idLog  INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
-NomeTabela VARCHAR(50) NOT NULL,
-Operacao VARCHAR(10) NOT NULL ,CHECK(operacao IN ('INSERT', 'UPDATE', 'DELETE')),
-ValorAtual VARCHAR(500) , 
-ValorNovo VARCHAR(500)
+-- Inserindo valores na tabela Produto
+INSERT INTO Produto (NomeProduto, Preço, idCategoria, idFornecedor)
+VALUES 
+('Ração Premium 10kg', 120.50, 1, 1),
+('Bola de Borracha', 25.99, 2, 2),
+('Coleira Ajustável', 45.90, 3, 2);
+
+-- criação tabela Pedido
+
+CREATE TABLE Pedido (
+    idPedido INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    DataPedido DATE DEFAULT GETDATE() NOT NULL,
+    ValorTotal DECIMAL(10,2) NOT NULL,
+    StatusPagamento VARCHAR(22) NOT NULL
 );
 
--- A tabela Cliente armazena informações dos clientes.
-CREATE TABLE Cliente(
-    idCliente INT PRIMARY KEY AUTO_INCREMENT NOT NULL,  -- idCliente é a chave primária, gerada automaticamente para cada cliente.
-    NomeCliente VARCHAR(100) NOT NULL,  -- NomeCliente armazena o nome do cliente, até 100 caracteres.
-    DataNascimento DATE NOT NULL,  -- Data de nascimento do cliente.
-    idDadosCadastrais INT,  -- Chave estrangeira para os dados cadastrais.
-    idPedido INT,  -- Chave estrangeira para os pedidos.
-    FOREIGN KEY (idDadosCadastrais) REFERENCES DadosCadastrais(idDadosCadastrais),  -- Relaciona com a tabela DadosCadastrais.
-    FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido)  -- Relaciona com a tabela Pedido.
+-- Inserindo valores na tabela Pedido
+INSERT INTO Pedido (DataPedido, ValorTotal, StatusPagamento)
+VALUES 
+(GETDATE(), 120.50, 'Pago'),
+(GETDATE(), 71.89, 'Pendente');
+
+-- criação da tabela PedidoProduto
+
+CREATE TABLE PedidoProduto (
+    idPedido INT NOT NULL,
+    idProduto INT NOT NULL,
+    Quantidade INT NOT NULL,
+    PreçoUnitario DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (idPedido, idProduto),
+    FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido),
+    FOREIGN KEY (idProduto) REFERENCES Produto(idProduto)
 );
 
--- 4  A tabela Pedido armazena as informações dos pedidos feitos pelos clientes.
-CREATE TABLE Pedido(
-    idPedido INT PRIMARY KEY AUTO_INCREMENT NOT NULL,  -- idPedido é a chave primária.
-    DataPedido DATE NOT NULL,  -- Data em que o pedido foi feito.
-    ValorTotal DECIMAL(10,2) NOT NULL,  -- Valor total do pedido.
-    StatusPagamento VARCHAR(100) NOT NULL,  -- Status do pagamento (pago, pendente, etc.).
-    idCliente INT  -- Chave estrangeira para o cliente que fez o pedido.
-    -- FOREIGN KEY (idCliente) REFERENCES Cliente(idCliente)  -- Relaciona com a tabela Cliente.
+-- Inserindo valores na tabela PedidoProduto
+INSERT INTO PedidoProduto (idPedido, idProduto, Quantidade, PreçoUnitario)
+VALUES 
+(1, 1, 1, 120.50),
+(2, 2, 2, 25.99),
+(2, 3, 1, 45.90);
+
+
+-- tabela LOG
+CREATE TABLE Log (
+    id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    nome_tabela VARCHAR(50) NOT NULL,
+    operacao VARCHAR(10) NOT NULL CHECK (operacao IN ('INSERT', 'UPDATE', 'DELETE')),
+    valor_atual VARCHAR(500) NULL,
+    valor_novo VARCHAR(500) NULL,
+    DataHora DATETIME DEFAULT GETDATE() NOT NULL
 );
 
--- adicionando chave estrangeira entre cliente e pedido erro de chave no criava a tabela
-
-ALTER TABLE Pedido
-ADD CONSTRAINT fk_Pedido_Cliente
-FOREIGN KEY (idCliente) REFERENCES Cliente (idCliente);
-
--- A tabela intermediária para relacionamento muitos-para-muitos entre pedidos e produtos.
-CREATE TABLE PedidoProduto(
-    idPedido INT,  -- Chave estrangeira para a tabela Pedido.
-    idProduto INT,  -- Chave estrangeira para a tabela Produto.
-    Quantidade INT NOT NULL,  -- Quantidade de produtos nesse pedido.
-    PreçoUnitario DECIMAL(10,2) NOT NULL,  -- Preço unitário do produto no momento da compra.
-    PRIMARY KEY (idPedido, idProduto),  -- A chave primária é a combinação do idPedido e idProduto.
-    FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido),  -- Relaciona com a tabela Pedido.
-    FOREIGN KEY (idProduto) REFERENCES Produto(idProduto)  -- Relaciona com a tabela Produto.
-);
-
--- A tabela Estoque armazena a quantidade disponível de cada produto.
-CREATE TABLE Estoque(
-    idEstoque INT PRIMARY KEY AUTO_INCREMENT NOT NULL,  -- idEstoque é a chave primária.
-    idProduto INT,  -- Chave estrangeira para a tabela Produto.
-    Quantidade INT NOT NULL,  -- Quantidade disponível no estoque.
-    FOREIGN KEY (idProduto) REFERENCES Produto(idProduto)  -- Relaciona com a tabela Produto.
-);
-
--- Criando índices para otimizar as consultas frequentes.
-CREATE INDEX idx_NomeCliente ON Cliente (NomeCliente);  -- Índice para agilizar as buscas por nome de cliente.
-CREATE INDEX idx_NomeProduto ON Produto (NomeProduto);  -- Índice para agilizar as buscas por nome de produto.
-CREATE INDEX idx_DataPedido ON Pedido (DataPedido);  -- Índice para agilizar buscas por data de pedido.
-
-
--- Trigger para INSERT
--- Essa trigger será acionada sempre que uma nova linha for inserida em uma tabela ela irá registrar o nome da tabela e os dados inseridos.
-
-DELIMITER $$
-CREATE TRIGGER LogInsert AFTER INSERT ON Categoria -- aqui voce pode mudar o nome para a tabela deseja monitorar
-FOR EACH ROW
+CREATE TRIGGER trg_Cliente_Audit
+ON Cliente
+AFTER INSERT, UPDATE, DELETE
+AS
 BEGIN
-	INSERT INTO Log(NomeTabela, Operacao, ValorAtual, ValorNovo)
-    VALUES ('Categoria', 'INSERT', NULL, CONCAT('NomeCategoria: ', NEW.NomeCategoria));
-END$$
-DELIMITER $$
+    SET NOCOUNT ON;
 
--- Trigger para UPDATE
--- Essa trigger será acionada sempre que um registro for atualizado. Ela irá registrar tanto os valores antigos (antes da atualização) quanto os valores novos (depois da atualização).
+    -- Registro de INSERT
+    IF EXISTS (SELECT * FROM inserted) AND NOT EXISTS (SELECT * FROM deleted)
+    BEGIN
+        INSERT INTO Log (nome_tabela, operacao, valor_novo)
+        SELECT 
+            'Cliente', 
+            'INSERT', 
+            CONCAT('Nome: ', Nome, ', Telefone: ', Telefone, ', Email: ', Email, ', CPF: ', CPF)
+        FROM inserted;
+    END
 
-DELIMITER $$
-CREATE TRIGGER LogUpdate AFTER UPDATE ON Categoria   -- colocar o nome tabela que deseja monitorar
-FOR EACH ROW
-BEGIN
-	INSERT INTO Log(NomeTabela, Operacao, valorAtual, ValorNovo)
-    VALUES (
-		'Categoria',
-        'UPDATE',
-        CONCAT('NomeCategoria: ', OLD.NomeCategoria), -- valor antes
-        CONCAT('NomeCategoria: ', NEW.NomeCategoria)); -- valor depois
-END$$
-DELIMITER $$
+    -- Registro de UPDATE
+    IF EXISTS (SELECT * FROM inserted) AND EXISTS (SELECT * FROM deleted)
+    BEGIN
+        INSERT INTO Log (nome_tabela, operacao, valor_atual, valor_novo)
+        SELECT 
+            'Cliente', 
+            'UPDATE', 
+            CONCAT('Nome: ', d.Nome, ', Telefone: ', d.Telefone, ', Email: ', d.Email, ', CPF: ', d.CPF),
+            CONCAT('Nome: ', i.Nome, ', Telefone: ', i.Telefone, ', Email: ', i.Email, ', CPF: ', i.CPF)
+        FROM deleted d
+        INNER JOIN inserted i ON d.idCliente = i.idCliente;
+    END
 
--- Trigger para DELETE
--- Essa trigger será acionada sempre que um registro for deletado. Ela irá registrar os valores antigos (antes da exclusão).
-        
-DELIMITER $$
-CREATE TRIGGER LogDelete AFTER DELETE ON Categoria -- nome da tabela que quer monitorar
-FOR EACH ROW 
-BEGIN
-	INSERT INTO Log(NomeTabela, Operacao, ValorAtual, ValorNovo)
-    VALUES(
-    'Categoria',
-    'DELETE', 
-    CONCAT('NomeTabela: ', OLD.NomeCategoria), -- antes da exclusao
-    NULL -- sem valor pois foi deletado
-	);
-END$$
-DELIMITER $$
-
--- Trigger para validação de CPF, garantindo que tenha 11 dígitos.
-DELIMITER $$
-
-DELIMITER $$
-CREATE TRIGGER VerificarCPF
-BEFORE INSERT ON DadosCadastrais
-FOR EACH ROW
-BEGIN
-    DECLARE digito1, digito2, soma INT;
-
-    -- Validar comprimento e formato do CPF (11 dígitos numéricos)
-    IF CHAR_LENGTH(NEW.CPF) <> 11 OR NEW.CPF REGEXP '[^0-9]' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CPF deve conter 11 dígitos numéricos.';
-    END IF;
-
-    -- Calcular o primeiro dígito verificador
-    SET soma = (SUBSTRING(NEW.CPF, 1, 1) * 10 +
-                SUBSTRING(NEW.CPF, 2, 1) * 9 +
-                SUBSTRING(NEW.CPF, 3, 1) * 8 +
-                SUBSTRING(NEW.CPF, 4, 1) * 7 +
-                SUBSTRING(NEW.CPF, 5, 1) * 6 +
-                SUBSTRING(NEW.CPF, 6, 1) * 5 +
-                SUBSTRING(NEW.CPF, 7, 1) * 4 +
-                SUBSTRING(NEW.CPF, 8, 1) * 3 +
-                SUBSTRING(NEW.CPF, 9, 1) * 2);
-    SET digito1 = IF(soma % 11 < 2, 0, 11 - (soma % 11));
-
-    -- Calcular o segundo dígito verificador
-    SET soma = (SUBSTRING(NEW.CPF, 1, 1) * 11 +
-                SUBSTRING(NEW.CPF, 2, 1) * 10 +
-                SUBSTRING(NEW.CPF, 3, 1) * 9 +
-                SUBSTRING(NEW.CPF, 4, 1) * 8 +
-                SUBSTRING(NEW.CPF, 5, 1) * 7 +
-                SUBSTRING(NEW.CPF, 6, 1) * 6 +
-                SUBSTRING(NEW.CPF, 7, 1) * 5 +
-                SUBSTRING(NEW.CPF, 8, 1) * 4 +
-                SUBSTRING(NEW.CPF, 9, 1) * 3 +
-                digito1 * 2);
-    SET digito2 = IF(soma % 11 < 2, 0, 11 - (soma % 11));
-
-    -- Verificar validade do CPF com os dígitos verificadores
-    IF digito1 != SUBSTRING(NEW.CPF, 10, 1) OR digito2 != SUBSTRING(NEW.CPF, 11, 1) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CPF inválido.';
-    END IF;
-END$$
-DELIMITER ;
-
--- scripty test dos log e cpf 
-
--- testando cpf
-INSERT INTO DadosCadastrais (Email, DataCadastro, CPF, Telefone, CNPJ, Endereço, CEP, RUA, Estado, idFornecedor)
-VALUES ('test@gmail.com', CURDATE(), '55712538865' , '99999999999', '12121212121212', 'rua sape', '07183060', 'Rua sape', 'SP',  1);
- 
- -- ver tudo que tem na tabela
-SELECT *FROM DadosCadastrais;
-
-
--- testando o LOG
-
--- teste inserçao tabela categoria
-INSERT INTO Categoria (NomeCategoria) VALUES ('Eletronicos');
-
--- test update, atualizando registro de categoria
-UPDATE Categoria SET NomeCategoria = 'Eletrodomesticos' WHERE NomeCategoria = 'Eletronicos';
-
--- test delete , delete de um campo na tabela categoria ou a qual necessitar
-DELETE FROM Categoria WHERE NomeCategoria = 'Eletrodomesticos';
-
-
-
-
--- verifique log
-
-SELECT *FROM Log;
-
-SELECT *FROM DadosCadastrais;
+    -- Registro de DELETE
+    IF EXISTS (SELECT * FROM deleted) AND NOT EXISTS (SELECT * FROM inserted)
+    BEGIN
+        INSERT INTO Log (nome_tabela, operacao, valor_atual)
+        SELECT 
+            'Cliente', 
+            'DELETE', 
+            CONCAT('Nome: ', Nome, ', Telefone: ', Telefone, ', Email: ', Email, ', CPF: ', CPF)
+        FROM deleted;
+    END
+END;
