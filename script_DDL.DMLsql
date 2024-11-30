@@ -1,9 +1,8 @@
+-- Criação do Banco de Dados
+CREATE DATABASE PetShop;
+USE PetShop;
 
-CREATE DATABASE PetShopEcommerce;
-
-
-USE PetShopEcommerce;
--- criação da tabela cliente
+-- Tabela Cliente
 CREATE TABLE Cliente (
     idCliente INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     Nome VARCHAR(100) NOT NULL,
@@ -19,7 +18,7 @@ VALUES
 ('Ana Clara', '(11) 98765-4321', 'ana.clara@gmail.com', '123.456.789-00'),
 ('Bruno Silva', '(21) 99876-5432', 'bruno.silva@hotmail.com', '234.567.890-11');
 
--- criação da tabela fornecedor
+-- Tabela Fornecedor
 CREATE TABLE Fornecedor (
     idFornecedor INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     NomeFornecedor VARCHAR(60) NOT NULL,
@@ -35,7 +34,7 @@ VALUES
 ('PetFood Ltda', '12345678000190', '(11) 99888-7777', 'contato@petfood.com.br', 'Rua das Flores, 123'),
 ('VetCare Supplies', '98765432000121', '(21) 99777-8888', 'suporte@vetcare.com', 'Av. dos Animais, 456');
 
--- criação da tabela fornecedor
+-- Tabela Categoria
 CREATE TABLE Categoria (
     idCategoria INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     NomeCategoria VARCHAR(50) NOT NULL
@@ -48,7 +47,7 @@ VALUES
 ('Brinquedos'),
 ('Acessórios');
 
--- criação da tabela Produto
+-- Tabela Produto
 CREATE TABLE Produto (
     idProduto INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     NomeProduto VARCHAR(50) NOT NULL,
@@ -66,42 +65,39 @@ VALUES
 ('Bola de Borracha', 25.99, 2, 2),
 ('Coleira Ajustável', 45.90, 3, 2);
 
--- criação tabela Pedido
-
+-- Tabela Pedido
 CREATE TABLE Pedido (
     idPedido INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    idCliente INT NOT NULL,
     DataPedido DATE DEFAULT GETDATE() NOT NULL,
     ValorTotal DECIMAL(10,2) NOT NULL,
-    StatusPagamento VARCHAR(22) NOT NULL
+    StatusPagamento VARCHAR(22) NOT NULL,
+    FOREIGN KEY (idCliente) REFERENCES Cliente(idCliente)
 );
 
 -- Inserindo valores na tabela Pedido
-INSERT INTO Pedido (DataPedido, ValorTotal, StatusPagamento)
+INSERT INTO Pedido (idCliente, DataPedido, ValorTotal, StatusPagamento)
 VALUES 
-(GETDATE(), 120.50, 'Pago'),
-(GETDATE(), 71.89, 'Pendente');
+(1, GETDATE(), 120.50, 'Pago'),
+(2, GETDATE(), 71.89, 'Pendente');
 
-
--- Tabela estoque
-
-CREATE TABLE Estoque(
-    idEstoque INT IDENTITY(1,1) PRIMARY KEY NOT NULL,  -- idEstoque como chave primária com incremento automático.
-    idProduto INT NOT NULL,  -- Chave estrangeira para a tabela Produto.
-    DataAtualizacao DATETIME DEFAULT GETDATE(),  -- Data de atualização com valor padrão de data atual.
-    Quantidade INT NOT NULL,  -- Quantidade disponível no estoque.
-    FOREIGN KEY (idProduto) REFERENCES Produto(idProduto)  -- Relaciona com a tabela Produto.
+-- Tabela Estoque
+CREATE TABLE Estoque (
+    idEstoque INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    idProduto INT NOT NULL,
+    DataAtualizacao DATETIME DEFAULT GETDATE(),
+    Quantidade INT NOT NULL,
+    FOREIGN KEY (idProduto) REFERENCES Produto(idProduto)
 );
 
-
--- Inserindo dados de exemplo na tabela Estoque
+-- Inserindo valores na tabela Estoque
 INSERT INTO Estoque (idProduto, Quantidade)
 VALUES 
-(1, 50),  -- Produto 1 com 50 unidades no estoque
-(2, 30),  -- Produto 2 com 30 unidades no estoque
-(3, 100); -- Produto 3 com 100 unidades no estoque
+(1, 50),
+(2, 30),
+(3, 100);
 
--- criação da tabela PedidoProduto
-
+-- Tabela PedidoProduto
 CREATE TABLE PedidoProduto (
     idPedido INT NOT NULL,
     idProduto INT NOT NULL,
@@ -119,8 +115,38 @@ VALUES
 (2, 2, 2, 25.99),
 (2, 3, 1, 45.90);
 
+-- Tabela Entrega
+CREATE TABLE Entrega (
+    idEntrega INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    idPedido INT NOT NULL,
+    status_entrega VARCHAR(30) NOT NULL,
+    data_de_entrega DATE DEFAULT GETDATE(),
+    FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido)
+);
 
--- tabela LOG
+-- Inserindo valores na tabela Entrega
+INSERT INTO Entrega (idPedido, status_entrega, data_de_entrega)
+VALUES 
+(1, 'Entregue', GETDATE()),
+(2, 'Pendente', NULL);
+
+-- Tabela Pagamento
+CREATE TABLE Pagamento (
+    idPagamento INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    idPedido INT NOT NULL,
+    status_do_pagamento VARCHAR(30) NOT NULL,
+    data_pagamento DATE DEFAULT GETDATE(),
+    tipo_pagamento VARCHAR(20) NOT NULL,
+    FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido)
+);
+
+-- Inserindo valores na tabela Pagamento
+INSERT INTO Pagamento (idPedido, status_do_pagamento, data_pagamento, tipo_pagamento)
+VALUES 
+(1, 'Aprovado', GETDATE(), 'Crédito'),
+(2, 'Pendente', NULL, 'Boleto');
+
+-- Tabela de Log
 CREATE TABLE Log (
     id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     nome_tabela VARCHAR(50) NOT NULL,
@@ -130,6 +156,8 @@ CREATE TABLE Log (
     DataHora DATETIME DEFAULT GETDATE() NOT NULL
 );
 
+
+-- Criação das Triggers
 CREATE TRIGGER trg_Cliente_Audit
 ON Cliente
 AFTER INSERT, UPDATE, DELETE
@@ -138,7 +166,7 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Registro de INSERT
-    IF EXISTS (SELECT * FROM inserted) AND NOT EXISTS (SELECT * FROM deleted)
+    IF EXISTS (SELECT 1 FROM inserted) AND NOT EXISTS (SELECT 1 FROM deleted)
     BEGIN
         INSERT INTO Log (nome_tabela, operacao, valor_novo)
         SELECT 
@@ -146,10 +174,10 @@ BEGIN
             'INSERT', 
             CONCAT('Nome: ', Nome, ', Telefone: ', Telefone, ', Email: ', Email, ', CPF: ', CPF)
         FROM inserted;
-    END
+    END;
 
     -- Registro de UPDATE
-    IF EXISTS (SELECT * FROM inserted) AND EXISTS (SELECT * FROM deleted)
+    IF EXISTS (SELECT 1 FROM inserted) AND EXISTS (SELECT 1 FROM deleted)
     BEGIN
         INSERT INTO Log (nome_tabela, operacao, valor_atual, valor_novo)
         SELECT 
@@ -159,10 +187,10 @@ BEGIN
             CONCAT('Nome: ', i.Nome, ', Telefone: ', i.Telefone, ', Email: ', i.Email, ', CPF: ', i.CPF)
         FROM deleted d
         INNER JOIN inserted i ON d.idCliente = i.idCliente;
-    END
+    END;
 
     -- Registro de DELETE
-    IF EXISTS (SELECT * FROM deleted) AND NOT EXISTS (SELECT * FROM inserted)
+    IF EXISTS (SELECT 1 FROM deleted) AND NOT EXISTS (SELECT 1 FROM inserted)
     BEGIN
         INSERT INTO Log (nome_tabela, operacao, valor_atual)
         SELECT 
@@ -170,5 +198,49 @@ BEGIN
             'DELETE', 
             CONCAT('Nome: ', Nome, ', Telefone: ', Telefone, ', Email: ', Email, ', CPF: ', CPF)
         FROM deleted;
-    END
+    END;
 END;
+
+
+
+--Evidência 1: INSERT
+SELECT * FROM Cliente;
+
+-- INSERINDO UM DADO NA TABELA CLIENTE
+INSERT INTO Cliente (Nome, Telefone, Email, CPF)
+VALUES ('Carlos Almeida', '(31) 98765-1234', 'carlos.almeida@gmail.com', '345.678.901-22');
+
+SELECT * FROM Cliente;
+
+--SELECT na Tabela Log
+SELECT * FROM Log WHERE operacao = 'INSERT';
+
+
+--Evidência 2: DELETE
+
+SELECT * FROM Cliente;
+
+-- DELETANDO cliente 4
+DELETE FROM Cliente WHERE idCliente = 4;
+SELECT * FROM Cliente;
+
+-- SELECT na tabela LOG após o DELETE
+SELECT * FROM Log WHERE operacao = 'DELETE';
+
+
+-- Evidência 3: UPDATE
+
+SELECT * FROM Cliente;
+
+-- UPDATE NA TABELA CLIENTE 
+UPDATE Cliente
+SET Telefone = '(31) 91234-5678'
+WHERE idCliente = 1;
+
+SELECT * FROM CLIENTE;
+
+-- SELECT na tabela LOG após o UPDATE
+SELECT * FROM Log WHERE operacao = 'UPDATE';
+
+
+
